@@ -3,6 +3,11 @@
 //  Include this on EVERY page:  <script src="api.js"></script>
 // ============================================================
 
+// ── DEMO MODE — Static deployment (Vercel / Netlify / GitHub Pages) ──────────
+// Auth checks are disabled so all pages are freely accessible without a backend.
+// To re-enable real auth, set window.ECOSCAN_DEMO_MODE = false before this script.
+if (typeof window.ECOSCAN_DEMO_MODE === 'undefined') window.ECOSCAN_DEMO_MODE = true;
+
 // Change this if your backend runs on a different port or host
 const API_BASE = (window.ECOSCAN_API_BASE || 'http://localhost:5000') + '/api';
 
@@ -12,7 +17,7 @@ function setToken(t)     { localStorage.setItem('ecoscan_token', t); }
 function removeToken()   { localStorage.removeItem('ecoscan_token'); localStorage.removeItem('ecoscan_user_data'); }
 function getUserData()   { try { return JSON.parse(localStorage.getItem('ecoscan_user_data')); } catch { return null; } }
 function setUserData(u)  { localStorage.setItem('ecoscan_user_data', JSON.stringify(u)); }
-function isLoggedIn()    { return !!getToken(); }
+function isLoggedIn()    { return window.ECOSCAN_DEMO_MODE ? true : !!getToken(); }
 
 // ── Core fetch wrapper ────────────────────────────────────────
 async function apiFetch(endpoint, options = {}) {
@@ -65,7 +70,9 @@ const Auth = {
 
   logout() {
     removeToken();
-    window.location.href = 'login.html';
+    sessionStorage.removeItem('ecoscan_auth');
+    sessionStorage.removeItem('ecoscan_user');
+    window.location.href = 'logout.html';
   },
 
   async getMe() {
@@ -121,8 +128,9 @@ const Recyclers = {
   getById(id)  { return apiFetch(`/recyclers/${id}`); },
 };
 
-// ── Auth guard — call on every protected page ─────────────────
+// ── Auth guard — disabled in demo/static mode ─────────────────
 function requireLogin(redirectTo = 'login.html') {
+  if (window.ECOSCAN_DEMO_MODE) return true;  // Demo: always allow
   if (!isLoggedIn()) {
     window.location.href = redirectTo;
     return false;

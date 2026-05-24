@@ -160,9 +160,9 @@
 
   <script src="api.js"></script>
   <script>
-    // Auth guard
+    // Demo mode: requireLogin() is a no-op (ECOSCAN_DEMO_MODE=true in api.js)
     document.addEventListener('DOMContentLoaded', async () => {
-      if (!requireLogin()) return;
+      requireLogin(); // no-op in demo mode, will redirect if real auth enabled
 
       try {
         // Load summary

@@ -163,7 +163,7 @@ function showSuccessMessage(type = "Login") {
         successMessageContainer.style.display = 'flex';
         requestAnimationFrame(() => requestAnimationFrame(() => successMessageContainer.classList.add('show')));
     }
-    setTimeout(() => { window.location.href = "dashboard.html"; }, 2000);
+setTimeout(() => { console.log("Login successful"); }, 2000);
 }
 
 // ── Real API Login ────────────────────────────────────────────
@@ -220,8 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fallbackStyle && fallbackStyle.textContent.includes('display: flex !important')) {
         fallbackStyle.remove();
     }
-    // If already logged in (sessionStorage flag set), skip to app
-    if (sessionStorage.getItem("ecoscan_auth")) { window.location.href = "dashboard.html"; return; }
+    // DEMO MODE: Removed auto-redirect to dashboard.html.
+    // In real deployment, restore: if (sessionStorage.getItem("ecoscan_auth")) { window.location.href = "dashboard.html"; return; }
     if (successMessageContainer) { successMessageContainer.style.display = 'none'; successMessageContainer.classList.remove('show'); }
     login();
 });

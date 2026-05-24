@@ -716,6 +716,7 @@ async function saveScanToBackend(itemName, material, recyclable, aiResponse) {
 
 <script src="api.js"></script>
 <script>
+  // Demo mode: requireLogin() is a no-op when ECOSCAN_DEMO_MODE=true (set in api.js)
   document.addEventListener('DOMContentLoaded', () => {
     if (typeof requireLogin === 'function') requireLogin();
   });
