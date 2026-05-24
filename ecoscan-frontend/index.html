@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>EcoScan — Recycle Smarter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,400;1,500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <style>
+    :root{
+      --ink:#0f1a0f; --forest:#1a3d1a; --pine:#2d6a2d;
+      --moss:#4a8c3f; --lime:#8bc34a; --cream:#f5f0e8;
+      --sand:#e8dfc8; --amber:#d4870a; --white:#fff;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;}
+
+    /* ── TOP BAR ── */
+    .topbar{background:var(--ink);color:#9ca3af;font-size:11px;padding:7px 40px;display:flex;justify-content:space-between;align-items:center;letter-spacing:.8px;}
+    .topbar a{color:#6b7280;text-decoration:none;margin-left:16px;transition:color .2s;}
+    .topbar a:hover{color:var(--lime);}
+
+    /* ── NAVBAR ── */
+    nav{position:sticky;top:0;z-index:200;background:rgba(245,240,232,.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.06);transition:box-shadow .3s;}
+    nav.scrolled{box-shadow:0 2px 20px rgba(0,0,0,.1);}
+    .nav-inner{max-width:1280px;margin:0 auto;padding:0 40px;height:70px;display:flex;align-items:center;justify-content:space-between;}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+    .logo-icon{width:42px;height:42px;background:var(--forest);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;}
+    .logo-text{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--forest);}
+    .logo-sub{font-size:8px;color:var(--moss);letter-spacing:3px;text-transform:uppercase;}
+    .nav-links{display:flex;align-items:center;gap:6px;}
+    .nav-links a{padding:7px 15px;font-size:13px;font-weight:500;color:var(--ink);text-decoration:none;border-radius:4px;transition:all .2s;}
+    .nav-links a:hover{color:var(--moss);background:rgba(74,140,63,.08);}
+    .nav-cta{display:flex;gap:8px;}
+    .btn-nav{padding:9px 22px;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;border-radius:3px;text-decoration:none;transition:opacity .2s;border:none;cursor:pointer;}
+    .btn-login{background:var(--forest);color:#fff;}
+    .btn-login:hover{background:var(--pine);}
+    .btn-join{background:var(--amber);color:#fff;}
+    .btn-join:hover{opacity:.85;}
+
+    /* ── HERO ── */
+    .hero{position:relative;min-height:100vh;overflow:hidden;display:flex;align-items:center;}
+    .hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease;}
+    .hero-slide.active{opacity:1;}
+    .hero-slide::after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,rgba(10,26,10,.82) 0%,rgba(10,26,10,.45) 60%,transparent 100%);}
+    .hero-content{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:0 40px;width:100%;}
+    .hero-kicker{display:inline-flex;align-items:center;gap:8px;background:rgba(139,195,74,.18);border:1px solid rgba(139,195,74,.3);color:var(--lime);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 16px;border-radius:2px;margin-bottom:24px;}
+    .hero-kicker span{width:7px;height:7px;border-radius:50%;background:var(--lime);display:inline-block;animation:blink 2s infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .hero-headline{font-family:'Bebas Neue',cursive;font-size:clamp(72px,11vw,136px);color:#fff;line-height:.92;letter-spacing:2px;margin-bottom:8px;}
+    .hero-headline em{font-family:'Playfair Display',serif;font-style:italic;color:var(--lime);display:block;font-size:.72em;}
+    .hero-body{font-family:'Cormorant Garamond',serif;font-size:19px;font-style:italic;color:rgba(255,255,255,.78);line-height:1.75;max-width:520px;margin-bottom:40px;}
+    .hero-btns{display:flex;gap:16px;flex-wrap:wrap;}
+    .btn-hero-primary{padding:15px 36px;background:var(--lime);color:var(--ink);font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;border-radius:2px;transition:all .25s;}
+    .btn-hero-primary:hover{background:#a5d65a;transform:translateY(-2px);}
+    .btn-hero-outline{padding:14px 36px;background:transparent;color:#fff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;border:2px solid rgba(255,255,255,.6);border-radius:2px;transition:all .25s;}
+    .btn-hero-outline:hover{border-color:#fff;background:rgba(255,255,255,.08);}
+    .slide-dots{position:absolute;bottom:36px;left:40px;display:flex;gap:10px;z-index:3;}
+    .slide-dots button{width:10px;height:3px;border:none;background:rgba(255,255,255,.3);border-radius:2px;cursor:pointer;padding:0;transition:all .4s;}
+    .slide-dots button.active{width:36px;background:var(--lime);}
+    .hero-scroll{position:absolute;bottom:36px;right:40px;color:rgba(255,255,255,.4);font-size:10px;letter-spacing:3px;text-transform:uppercase;z-index:3;display:flex;align-items:center;gap:8px;}
+    .hero-scroll::before{content:'';display:inline-block;width:16px;height:16px;border:1.5px solid rgba(255,255,255,.3);border-radius:50%;animation:bounce .3s infinite alternate;}
+    @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(4px)}}
+
+    /* ── TICKER ── */
+    .ticker{background:var(--moss);overflow:hidden;padding:13px 0;border-top:3px solid var(--lime);border-bottom:3px solid var(--lime);}
+    .ticker-inner{display:flex;animation:marquee 30s linear infinite;white-space:nowrap;}
+    .ticker-item{font-family:'Bebas Neue',cursive;font-size:18px;color:#fff;padding:0 36px;flex-shrink:0;letter-spacing:3px;}
+    @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+    /* ── SECTION SHARED ── */
+    .section{padding:100px 40px;}
+    .sec-inner{max-width:1280px;margin:0 auto;}
+    .sec-badge{display:inline-block;background:var(--sand);color:var(--moss);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 14px;border-radius:2px;margin-bottom:14px;}
+    .sec-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,46px);font-weight:900;color:var(--ink);line-height:1.15;}
+    .sec-title em{color:var(--moss);font-style:italic;}
+
+    /* ── FEATURES ── */
+    .features-bg{background:var(--white);}
+    .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:56px;}
+    .feat-card{padding:48px 36px;background:var(--cream);transition:transform .3s,box-shadow .3s;cursor:default;}
+    .feat-card:nth-child(2){background:var(--forest);}
+    .feat-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(0,0,0,.12);}
+    .feat-icon{font-family:'Bebas Neue',cursive;font-size:80px;color:var(--sand);line-height:1;margin-bottom:20px;}
+    .feat-card:nth-child(2) .feat-icon{color:var(--lime);}
+    .feat-num{display:inline-block;background:var(--sand);color:var(--moss);font-size:10px;font-weight:700;letter-spacing:2px;padding:4px 12px;margin-bottom:14px;}
+    .feat-card:nth-child(2) .feat-num{background:rgba(139,195,74,.2);color:var(--lime);}
+    .feat-h{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--ink);margin-bottom:12px;}
+    .feat-card:nth-child(2) .feat-h{color:#fff;}
+    .feat-p{font-size:14px;color:#666;line-height:1.8;}
+    .feat-card:nth-child(2) .feat-p{color:rgba(255,255,255,.65);}
+
+    /* ── CTA SPLIT ── */
+    .cta-bg{background:var(--ink);}
+    .cta-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;}
+    .cta-card{padding:64px 52px;position:relative;overflow:hidden;}
+    .cta-card:nth-child(1){background:var(--amber);}
+    .cta-card:nth-child(2){background:var(--moss);}
+    .cta-ghost{position:absolute;bottom:-20px;right:16px;font-family:'Bebas Neue',cursive;font-size:180px;color:rgba(255,255,255,.07);line-height:1;pointer-events:none;}
+    .cta-kicker{display:inline-block;background:rgba(255,255,255,.2);color:#fff;font-size:10px;font-weight:700;letter-spacing:2px;padding:5px 14px;margin-bottom:18px;}
+    .cta-h{font-family:'Bebas Neue',cursive;font-size:68px;color:#fff;line-height:.92;letter-spacing:2px;margin-bottom:22px;}
+    .cta-p{font-size:15px;color:rgba(255,255,255,.82);line-height:1.8;max-width:360px;margin-bottom:32px;}
+    .cta-btn{display:inline-block;padding:13px 30px;background:#fff;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;border-radius:2px;}
+    .cta-card:nth-child(1) .cta-btn{color:var(--amber);}
+    .cta-card:nth-child(2) .cta-btn{color:var(--moss);}
+
+
+    /* ── 3R PILLARS ── */
+    .pillars-bg{background:var(--forest);}
+    .pillars-heading{display:flex;gap:18px;align-items:baseline;margin-bottom:60px;}
+    .pillars-ghost{font-family:'Bebas Neue',cursive;font-size:80px;color:rgba(255,255,255,.06);line-height:1;letter-spacing:4px;}
+    .pillar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;}
+    .pillar{padding:52px 40px;background:rgba(255,255,255,.04);border-top:3px solid transparent;transition:background .3s;}
+    .pillar:nth-child(1){border-top-color:var(--lime);}
+    .pillar:nth-child(2){border-top-color:var(--amber);}
+    .pillar:nth-child(3){border-top-color:rgba(255,255,255,.2);}
+    .pillar:hover{background:rgba(255,255,255,.07);}
+    .pillar-label{font-family:'Bebas Neue',cursive;font-size:86px;line-height:.9;margin-bottom:22px;}
+    .pillar:nth-child(1) .pillar-label{color:var(--lime);}
+    .pillar:nth-child(2) .pillar-label{color:var(--amber);}
+    .pillar:nth-child(3) .pillar-label{color:rgba(255,255,255,.15);}
+    .pillar-h{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff;margin-bottom:12px;}
+    .pillar-p{font-size:14px;color:rgba(255,255,255,.58);line-height:1.85;}
+
+    /* ── MAP SECTION ── */
+    .map-bg{background:#080f08;padding:100px 40px;}
+    .map-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:60px;}
+    .map-count-val{font-family:'Bebas Neue',cursive;font-size:64px;color:var(--lime);line-height:1;}
+    .map-count-label{font-size:9px;color:#555;letter-spacing:3px;text-transform:uppercase;}
+    .map-grid{display:grid;grid-template-columns:1fr 350px;gap:32px;}
+    .map-box{background:rgba(255,255,255,.02);border:1px solid rgba(139,195,74,.1);padding:28px;}
+    .map-svg{width:100%;max-height:480px;}
+    .city-dot{cursor:pointer;}
+    .stat-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);padding:24px;margin-bottom:3px;}
+    .stat-label{font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+    .stat-val{font-family:'Bebas Neue',cursive;font-size:48px;color:var(--lime);line-height:1;margin-bottom:4px;}
+    .stat-bar-wrap{height:3px;background:rgba(255,255,255,.08);border-radius:99px;margin:6px 0;overflow:hidden;}
+    .stat-bar{height:100%;background:var(--amber);border-radius:99px;}
+    .stat-sub{font-size:11px;color:#555;}
+    .city-list{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);padding:18px 20px;}
+    .city-list-title{font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+    .city-list-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+    .city-item{display:flex;align-items:center;gap:6px;padding:4px 8px;cursor:pointer;transition:background .2s;border-left:2px solid transparent;}
+    .city-item:hover,.city-item.active{background:rgba(139,195,74,.12);border-left-color:var(--lime);}
+    .city-dot-sm{width:6px;height:6px;border-radius:50%;background:var(--lime);flex-shrink:0;}
+    .city-name{font-size:12px;color:#666;transition:color .2s;}
+    .city-item:hover .city-name,.city-item.active .city-name{color:var(--lime);}
+
+    /* ── TESTIMONIALS ── */
+    .testi-bg{background:var(--sand);padding:100px 40px;}
+    .testi-inner{max-width:860px;margin:0 auto;text-align:center;}
+    .testi-box{background:var(--white);padding:56px 64px;margin-top:40px;min-height:240px;}
+    .testi-quote-mark{font-family:'Playfair Display',serif;font-size:110px;color:var(--sand);line-height:.6;margin-bottom:14px;font-style:italic;}
+    .testi-text{font-family:'Cormorant Garamond',serif;font-size:21px;color:#444;line-height:1.8;font-style:italic;margin-bottom:32px;}
+    .testi-author{display:flex;align-items:center;justify-content:center;gap:12px;}
+    .testi-avatar{width:48px;height:48px;border-radius:50%;background:var(--forest);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;font-size:16px;}
+    .testi-name{font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:var(--ink);text-align:left;}
+    .testi-role{font-size:10px;color:#aaa;letter-spacing:1px;text-transform:uppercase;}
+    .testi-dots{display:flex;gap:8px;justify-content:center;margin-top:24px;}
+    .testi-dots button{width:10px;height:3px;border:none;background:var(--sand);border-radius:2px;cursor:pointer;padding:0;transition:all .35s;}
+    .testi-dots button.active{width:30px;background:var(--moss);}
+
+    /* ── STATS ── */
+    .stats-bg{background:var(--forest);padding:80px 40px;}
+    .stats-grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);border-left:1px solid rgba(255,255,255,.08);}
+    .stat-item{padding:48px 36px;text-align:center;border-right:1px solid rgba(255,255,255,.08);}
+    .stat-emoji{font-size:44px;margin-bottom:12px;}
+    .stat-big{font-family:'Bebas Neue',cursive;font-size:60px;color:var(--lime);line-height:1;}
+    .stat-unit{font-size:22px;}
+    .stat-desc{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:2px;text-transform:uppercase;margin-top:8px;}
+
+
+    /* ── FOOTER ── */
+    footer{background:#0a0f0a;border-top:3px solid var(--moss);}
+    .footer-inner{max-width:1280px;margin:0 auto;padding:64px 40px 32px;}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
+    .footer-logo-text{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--lime);}
+    .footer-tagline{font-family:'Cormorant Garamond',serif;font-size:15px;color:rgba(255,255,255,.35);line-height:1.8;font-style:italic;max-width:280px;margin-top:12px;}
+    .footer-col-title{font-family:'Bebas Neue',cursive;font-size:20px;color:var(--lime);letter-spacing:3px;margin-bottom:18px;}
+    .footer-col ul{list-style:none;}
+    .footer-col li{margin-bottom:10px;}
+    .footer-col a{color:rgba(255,255,255,.32);font-size:13px;text-decoration:none;transition:color .2s;}
+    .footer-col a:hover{color:var(--lime);}
+    .footer-bottom{border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;justify-content:space-between;align-items:center;}
+    .footer-bottom span{font-size:11px;color:rgba(255,255,255,.2);letter-spacing:.8px;}
+    .footer-bottom em{font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(255,255,255,.15);}
+
+    /* ── INDIA MAP SVG PATH ── */
+    .india-path{fill:url(#mapGrad);stroke:rgba(139,195,74,.45);stroke-width:.5;}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:768px){
+      .feat-grid,.cta-grid,.org-grid,.proj-grid,.pillar-grid,.map-grid,.news-grid,.nl-inner,.footer-grid{grid-template-columns:1fr;}
+      .hero-headline{font-size:56px;}
+      .section{padding:60px 20px;}
+      .nav-inner{padding:0 20px;}
+      .nav-links{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="mainNav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon"><i class="fas fa-recycle"></i></div>
+      <div>
+        <div class="logo-text">EcoScan</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#map">Recyclers Map</a>
+    </div>
+    <div class="nav-cta">
+      <a href="login.html" class="btn-nav btn-login">Login →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO SLIDESHOW -->
+<section class="hero">
+  <div class="hero-slide active" style="background-image:url('img7.jpg')"></div>
+  <div class="hero-slide" style="background-image:url('img2.jpg')"></div>
+  <div class="hero-slide" style="background-image:url('img3.jpg')"></div>
+  <div class="hero-slide" style="background-image:url('img6.jpg')"></div>
+
+  <div class="hero-content">
+    <div class="hero-kicker"><span></span> <span id="heroKicker">Our Mission</span></div>
+    <div class="hero-headline">Recycling<br><em id="heroAccent">India Forward.</em></div>
+    <p class="hero-body" id="heroBody">Empowering communities across 29 states to responsibly recycle plastic &amp; e-waste through smart AI technology.</p>
+    <div class="hero-btns">
+    </div>
+  </div>
+
+  <div class="slide-dots" id="slideDots">
+    <button class="active" onclick="goSlide(0)"></button>
+    <button onclick="goSlide(1)"></button>
+    <button onclick="goSlide(2)"></button>
+    <button onclick="goSlide(3)"></button>
+  </div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">♻ RECYCLE PLASTIC</span>
+    <span class="ticker-item">🌱 REDUCE WASTE</span>
+    <span class="ticker-item">💧 CLEAN ENVIRONMENT</span>
+    <span class="ticker-item">🌍 29 STATES COVERED</span>
+    <span class="ticker-item">🍶 PET BOTTLE COLLECTION</span>
+    <span class="ticker-item">✊ JOIN THE MOVEMENT</span>
+    <span class="ticker-item">♻ RECYCLE PLASTIC</span>
+    <span class="ticker-item">🌱 REDUCE WASTE</span>
+    <span class="ticker-item">💧 CLEAN ENVIRONMENT</span>
+    <span class="ticker-item">🌍 29 STATES COVERED</span>
+    <span class="ticker-item">🍶 PET BOTTLE COLLECTION</span>
+    <span class="ticker-item">✊ JOIN THE MOVEMENT</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section features-bg" id="features">
+  <div class="sec-inner">
+    <div style="display:flex;gap:16px;align-items:baseline;margin-bottom:56px;">
+      <span style="font-family:'Bebas Neue',cursive;font-size:80px;color:var(--sand);line-height:1;">02</span>
+      <div>
+        <h2 class="sec-title">What We <em>Do</em></h2>
+        <p style="font-size:12px;color:#aaa;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Core Initiatives</p>
+      </div>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">♻</div>
+        <div class="feat-num">01</div>
+        <h3 class="feat-h">Recycle Plastic Waste</h3>
+        <p class="feat-p">Plastic is harming our environment daily. Recycling and re-using stops the demand for new plastic production entirely.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌱</div>
+        <div class="feat-num">02</div>
+        <h3 class="feat-h">Recycling Is A Must</h3>
+        <p class="feat-p">Recycling reduces need for raw materials, preserving resources for future generations and cutting pollution drastically.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 3R PILLARS -->
+<section class="section pillars-bg">
+  <div class="sec-inner">
+    <div class="pillars-heading">
+      <span class="pillars-ghost">3R</span>
+      <div>
+        <h2 class="sec-title" style="color:#fff;">The Pillars of <em>EcoScan</em></h2>
+        <p style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:3px;text-transform:uppercase;margin-top:6px;">Recycle · Reduce · Reuse</p>
+      </div>
+    </div>
+    <div class="pillar-grid">
+      <div class="pillar">
+        <div class="pillar-label">RECYCLE</div>
+        <h3 class="pillar-h">Recycle Plastic</h3>
+        <p class="pillar-p">Plastic, a very common element and very part of our daily life, is harming the environment every day. The way to deal with plastic is recycling and re-using them to stop new production.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">REDUCE</div>
+        <h3 class="pillar-h">Reduce Waste</h3>
+        <p class="pillar-p">Wastes are harmful materials damaging our environment day by day. The amount of waste needs to be reduced to a minimum to protect and preserve our nature for future generations.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-label">REUSE</div>
+        <h3 class="pillar-h">Careful Disposal</h3>
+        <p class="pillar-p">Plastic is non-biodegradable and the safest way to deal with it is re-using it as much as possible so that production of new plastic can be ceased once and for all.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAP SECTION -->
+<section class="map-bg" id="map">
+  <div style="max-width:1280px;margin:0 auto;">
+    <div class="map-header">
+      <div>
+        <div class="sec-badge" style="background:rgba(139,195,74,.15);color:var(--lime);">Live Network</div>
+        <h2 class="sec-title" style="color:#fff;">Recycling Centres <em>in India</em></h2>
+        <p style="font-family:'Cormorant Garamond',serif;font-size:17px;font-style:italic;color:rgba(255,255,255,.4);margin-top:8px;">PET Bottle Recycling Machine Locations</p>
+      </div>
+      <div style="text-align:right;">
+        <div class="map-count-val">247</div>
+        <div class="map-count-label">Active Machines</div>
+      </div>
+    </div>
+    <div class="map-grid">
+      <div class="map-box">
+        <svg class="map-svg" viewBox="20 4 60 84">
+          <defs>
+            <radialGradient id="mapGrad" cx="50%" cy="45%">
+              <stop offset="0%" stop-color="#162616"/>
+              <stop offset="100%" stop-color="#0a150a"/>
+            </radialGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="1.2" result="b"/><feComposite in="SourceGraphic" in2="b" operator="over"/></filter>
+          </defs>
+          <path d="M44,8 L49,7 L54,8 L58,9 L62,8 L67,9 L71,11 L74,13 L76,16 L75,19 L72,21 L71,24 L73,26 L75,29 L73,32 L71,35 L70,38 L72,41 L71,44 L68,47 L67,50 L69,53 L71,56 L69,59 L66,62 L63,65 L60,67 L58,71 L56,74 L54,77 L52,80 L50,83 L48,81 L46,77 L44,74 L42,77 L40,80 L38,76 L37,72 L35,68 L33,64 L31,60 L29,56 L27,52 L26,48 L28,44 L30,40 L28,36 L26,32 L28,28 L30,24 L28,20 L30,17 L33,15 L36,13 L39,11 L42,9 Z" fill="rgba(0,0,0,0.5)" transform="translate(0.6,1)"/>
+          <path class="india-path" d="M44,8 L49,7 L54,8 L58,9 L62,8 L67,9 L71,11 L74,13 L76,16 L75,19 L72,21 L71,24 L73,26 L75,29 L73,32 L71,35 L70,38 L72,41 L71,44 L68,47 L67,50 L69,53 L71,56 L69,59 L66,62 L63,65 L60,67 L58,71 L56,74 L54,77 L52,80 L50,83 L48,81 L46,77 L44,74 L42,77 L40,80 L38,76 L37,72 L35,68 L33,64 L31,60 L29,56 L27,52 L26,48 L28,44 L30,40 L28,36 L26,32 L28,28 L30,24 L28,20 L30,17 L33,15 L36,13 L39,11 L42,9 Z" filter="url(#glow)"/>
+          <!-- Grid lines -->
+          <line x1="20" y1="30" x2="80" y2="30" stroke="rgba(139,195,74,0.06)" stroke-width="0.3"/>
+          <line x1="20" y1="50" x2="80" y2="50" stroke="rgba(139,195,74,0.06)" stroke-width="0.3"/>
+          <line x1="20" y1="70" x2="80" y2="70" stroke="rgba(139,195,74,0.06)" stroke-width="0.3"/>
+          <line x1="40" y1="4" x2="40" y2="88" stroke="rgba(139,195,74,0.06)" stroke-width="0.3"/>
+          <line x1="60" y1="4" x2="60" y2="88" stroke="rgba(139,195,74,0.06)" stroke-width="0.3"/>
+          <!-- City markers -->
+          <g class="city-dot" data-city="Delhi">    <circle cx="44" cy="22" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="46" y="20.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Delhi</text></g>
+          <g class="city-dot" data-city="Lucknow">  <circle cx="53" cy="27" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="55" y="25.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Lucknow</text></g>
+          <g class="city-dot" data-city="Jaipur">   <circle cx="37" cy="30" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="39" y="28.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Jaipur</text></g>
+          <g class="city-dot" data-city="Ahmedabad"><circle cx="27" cy="43" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="22" y="42" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Ahmedabad</text></g>
+          <g class="city-dot" data-city="Mumbai">   <circle cx="28" cy="55" r="2" fill="rgba(139,195,74,0.9)" stroke="rgba(139,195,74,0.5)" stroke-width="0.4"/><text x="21" y="54" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Mumbai</text></g>
+          <g class="city-dot" data-city="Hyderabad"><circle cx="42" cy="59" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="44" y="57.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Hyderabad</text></g>
+          <g class="city-dot" data-city="Bangalore"><circle cx="37" cy="67" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="39" y="65.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Bangalore</text></g>
+          <g class="city-dot" data-city="Chennai">  <circle cx="44" cy="73" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="46" y="71.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Chennai</text></g>
+          <g class="city-dot" data-city="Kolkata">  <circle cx="63" cy="57" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="65" y="55.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Kolkata</text></g>
+          <g class="city-dot" data-city="Guwahati"> <circle cx="70" cy="29" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="65" y="27.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Guwahati</text></g>
+          <g class="city-dot" data-city="Kochi">    <circle cx="33" cy="75" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="25" y="73.5" font-size="2.2" fill="#86efac" font-family="DM Sans,sans-serif">Kochi</text></g>
+          <g class="city-dot" data-city="Coimbatore"><circle cx="38" cy="77" r="1.8" fill="rgba(139,195,74,0.7)" stroke="rgba(139,195,74,0.4)" stroke-width="0.4"/><text x="40" y="75.5" font-size="2" fill="#86efac" font-family="DM Sans,sans-serif">Coimbatore</text></g>
+        </svg>
+      </div>
+      <div>
+        <div class="stat-box">
+          <div class="stat-label">Total Machines</div>
+          <div class="stat-val">247</div>
+          <div class="stat-sub">Across 12 major cities</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Monthly Collection</div>
+          <div class="stat-val" style="color:#4dd0e1;">35.8t</div>
+          <div class="stat-sub">PET bottles recycled</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Landfill Reduction</div>
+          <div class="stat-val" style="color:var(--amber);">75%</div>
+          <div class="stat-bar-wrap"><div class="stat-bar" style="width:75%"></div></div>
+          <div class="stat-sub">Environmental impact</div>
+        </div>
+        <div class="city-list">
+          <div class="city-list-title">Active Cities</div>
+          <div class="city-list-grid" id="cityList">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- TESTIMONIALS -->
+<section class="testi-bg">
+  <div class="testi-inner">
+    <div class="sec-badge">Voices</div>
+    <h2 class="sec-title" style="text-align:center;">What People <em>Say</em></h2>
+    <div class="testi-box" id="testiBox">
+      <div class="testi-quote-mark">"</div>
+      <p class="testi-text" id="testiText">Nice depiction of the ground reality. Unless our habits change, the replacements to plastics will also be littered. We should amend our slogan to 'say NO to littering'.</p>
+      <div class="testi-author">
+        <div class="testi-avatar" id="testiAvatar">VH</div>
+        <div><div class="testi-name" id="testiName">Vijay Habbu</div><div class="testi-role" id="testiRole">Environmental Activist</div></div>
+      </div>
+    </div>
+    <div class="testi-dots" id="testiDots">
+      <button class="active" onclick="goTesti(0)"></button>
+      <button onclick="goTesti(1)"></button>
+      <button onclick="goTesti(2)"></button>
+    </div>
+  </div>
+</section>
+
+<!-- STATS COUNTER -->
+<section class="stats-bg">
+  <div class="stats-grid">
+    <div class="stat-item"><div class="stat-emoji">🗑</div><div class="stat-big"><span id="cnt1">0</span><span class="stat-unit"> MT</span></div><div class="stat-desc">Generated Waste / Year</div></div>
+    <div class="stat-item"><div class="stat-emoji">🏭</div><div class="stat-big"><span id="cnt2">0</span><span class="stat-unit"> Lacs MT</span></div><div class="stat-desc">Recycling Capacity</div></div>
+    <div class="stat-item"><div class="stat-emoji">♻</div><div class="stat-big"><span id="cnt3">0</span><span class="stat-unit">%</span></div><div class="stat-desc">Successfully Recycled</div></div>
+  </div>
+</section>
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div style="width:38px;height:38px;background:var(--moss);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;"><i class="fas fa-recycle"></i></div>
+          <div class="footer-logo-text">EcoScan</div>
+        </div>
+        <p class="footer-tagline">Empowering India's recycling ecosystem through technology-enabled waste management. Cleaner India, Greener Future.</p>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Pages</div>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#map">Recyclers Map</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#news">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">App</div>
+        <ul>
+          <li><a href="login.html">Login / Sign Up</a></li>
+          <li><a href="login.html">Scanner</a></li>
+          <li><a href="login.html">Rewards</a></li>
+          <li><a href="login.html">How It Works</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Contact</div>
+        <ul>
+          <li><a href="#">+91-6291559908</a></li>
+          <li><a href="#">info@ecoscan.com</a></li>
+          <li><a href="#">Sridevi Women's Engineering College</a></li>
+          <li><a href="#">Hyderabad, India</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ECOSCAN · ALL RIGHTS RESERVED</span>
+      <em>Sridevi Women's Engineering College </em>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Hero Slideshow ──
+const SLIDES=[
+  {kicker:'Our Mission',accent:'India Forward.',body:'Empowering communities across 29 states to responsibly recycle plastic & e-waste through smart AI technology.'},
+  {kicker:'Join The Movement',accent:'Pledge. Act.',body:'Over 247 PET bottle recycling machines collecting 35.8 tonnes every month across India.'},
+  {kicker:'AI-Powered Scanning',accent:'Scan. Recycle.',body:'Use our smart AI scanner to instantly identify plastics and get eco-friendly disposal guidance.'},
+  {kicker:'Earn Rewards',accent:'Go Green.',body:'Earn points and cashback every time you recycle. Make sustainability rewarding for you and the planet.'}
+];
+let slideIdx=0;
+const slides=document.querySelectorAll('.hero-slide');
+const dots=document.querySelectorAll('#slideDots button');
+function goSlide(n){
+  slides[slideIdx].classList.remove('active');
+  dots[slideIdx].classList.remove('active');
+  slideIdx=n;
+  slides[slideIdx].classList.add('active');
+  dots[slideIdx].classList.add('active');
+  document.getElementById('heroKicker').textContent=SLIDES[n].kicker;
+  document.getElementById('heroAccent').textContent=SLIDES[n].accent;
+  document.getElementById('heroBody').textContent=SLIDES[n].body;
+}
+setInterval(()=>goSlide((slideIdx+1)%4),4500);
+
+// ── Navbar scroll ──
+window.addEventListener('scroll',()=>{
+  document.getElementById('mainNav').classList.toggle('scrolled',window.scrollY>50);
+});
+
+// ── City list ──
+const CITIES=['Delhi','Lucknow','Jaipur','Ahmedabad','Mumbai','Bangalore','Chennai','Kolkata','Guwahati','Hyderabad','Kochi','Coimbatore'];
+const cityListEl=document.getElementById('cityList');
+CITIES.forEach(c=>{
+  const d=document.createElement('div');
+  d.className='city-item';
+  d.innerHTML=`<div class="city-dot-sm"></div><span class="city-name">${c}</span>`;
+  d.addEventListener('mouseenter',()=>d.classList.add('active'));
+  d.addEventListener('mouseleave',()=>d.classList.remove('active'));
+  cityListEl.appendChild(d);
+});
+
+// ── Testimonials ──
+const TESTIS=[
+  {text:"Nice depiction of the ground reality. Unless our habits change, the replacements to plastics will also be littered. We should amend our slogan to 'say NO to littering'.",name:'Vijay Habbu',role:'Environmental Activist',init:'VH'},
+  {text:"We should change ourselves and pledge not to throw waste anywhere — use dustbins and support the clean India movement. #PlasticFreeIndia #CleanIndia",name:'Neeraj Sharma',role:'Clean India Advocate',init:'NS'},
+  {text:"People must first take out the garbage in their heads. Rag pickers and recycling will only be understood when all of us are truly aware and choose to save the environment.",name:'Rukmani Verma',role:'Sustainability Writer',init:'RV'}
+];
+let testiIdx=0;
+const testiDots=document.querySelectorAll('#testiDots button');
+function goTesti(n){
+  testiDots[testiIdx].classList.remove('active');
+  testiIdx=n;
+  const t=TESTIS[n];
+  document.getElementById('testiText').textContent=t.text;
+  document.getElementById('testiName').textContent=t.name;
+  document.getElementById('testiRole').textContent=t.role;
+  document.getElementById('testiAvatar').textContent=t.init;
+  testiDots[testiIdx].classList.add('active');
+}
+setInterval(()=>goTesti((testiIdx+1)%3),5500);
+
+// ── Stats counter ──
+function animateCount(id,target,suffix=''){
+  const el=document.getElementById(id);
+  let v=0; const step=target/80;
+  const obs=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){
+      obs.disconnect();
+      const iv=setInterval(()=>{v=Math.min(v+step,target);el.textContent=Math.floor(v)+suffix;if(v>=target)clearInterval(iv);},20);
+    }
+  });
+  obs.observe(el);
+}
+animateCount('cnt1',900);
+animateCount('cnt2',14);
+animateCount('cnt3',90);
+</script>
+</body>
+</html>

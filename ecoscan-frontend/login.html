@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="mystyle.css">
+    <title>EcoScan — Login & Register</title>
+    <style>
+        /* Fallback: show login form immediately if JS hasn't run yet */
+        #login { display: flex !important; opacity: 1 !important; left: 35px !important; }
+    </style>
+</head>
+<body>
+<noscript><div style="position:fixed;top:0;left:0;width:100%;background:#c0392b;color:#fff;text-align:center;padding:12px;z-index:9999;font-family:sans-serif;">JavaScript is required to use EcoScan. Please enable it in your browser settings.</div></noscript>
+<div class="wrapper">
+    <nav class="nav">
+        <div class="nav-logo"><p>EcoScan</p></div>
+        <div class="nav-menu" id="navMenu">
+            <ul>
+                <li><a href="index.html" class="link">Home</a></li>
+                <li><a href="#services" class="link">Services</a></li>
+            </ul>
+        </div>
+        <div class="nav-auth-buttons" id="navAuthButtons">
+            <button class="btn white-btn" id="loginBtn" onclick="login()">Sign In</button>
+            <button class="btn" id="registerBtn" onclick="register()">Sign Up</button>
+        </div>
+        <div class="nav-menu-btn">
+            <i class="bx bx-menu" onclick="myMenuFunction()"></i>
+        </div>
+    </nav>
+
+    <div class="form-box" id="formBox">
+
+        <!-- LOGIN FORM -->
+        <div class="login-container" id="login">
+            <div class="top">
+                <span>Don't have an account? <a href="#" onclick="register()">Sign Up</a></span>
+                <header>Login</header>
+            </div>
+            <div class="input-box">
+                <input type="text" class="input-field" placeholder="Email" id="login-email" autocomplete="username">
+                <i class="bx bx-user"></i>
+                <span class="error-message" id="login-email-error"></span>
+            </div>
+            <div class="input-box">
+                <input type="password" class="input-field" placeholder="Password" id="login-password" autocomplete="current-password">
+                <i class="bx bx-lock-alt"></i>
+                <span class="error-message" id="login-password-error"></span>
+            </div>
+            <div class="input-box">
+                <button type="button" class="submit" onclick="handleLoginSubmit()">Sign In</button>
+            </div>
+            <div class="two-col">
+                <div class="one">
+                    <input type="checkbox" id="login-check">
+                    <label for="login-check"> Remember Me</label>
+                </div>
+                <div class="two">
+                    <label><a href="#" class="link">Forgot password?</a></label>
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div class="register-container" id="register">
+            <div class="top">
+                <span>Have an account? <a href="#" onclick="login()">Login</a></span>
+                <header>Sign Up</header>
+            </div>
+            <div class="two-forms">
+                <div class="input-box">
+                    <input type="text" class="input-field" placeholder="Firstname" id="reg-firstname" autocomplete="given-name">
+                    <i class="bx bx-user"></i>
+                    <span class="error-message" id="reg-firstname-error"></span>
+                </div>
+                <div class="input-box">
+                    <input type="text" class="input-field" placeholder="Lastname" id="reg-lastname" autocomplete="family-name">
+                    <i class="bx bx-user"></i>
+                    <span class="error-message" id="reg-lastname-error"></span>
+                </div>
+            </div>
+            <div class="input-box">
+                <input type="email" class="input-field" placeholder="Email" id="reg-email" autocomplete="email">
+                <i class="bx bx-envelope"></i>
+                <span class="error-message" id="reg-email-error"></span>
+            </div>
+            <div class="input-box">
+                <input type="password" class="input-field" placeholder="Password" id="reg-password" autocomplete="new-password">
+                <i class="bx bx-lock-alt"></i>
+                <span class="error-message" id="reg-password-error"></span>
+            </div>
+            <div class="input-box">
+                <input type="password" class="input-field" placeholder="Confirm Password" id="reg-password-confirm" autocomplete="new-password">
+                <i class="bx bx-lock-alt"></i>
+                <span class="error-message" id="reg-password-confirm-error"></span>
+            </div>
+            <div class="input-box terms-box">
+                <input type="checkbox" id="reg-terms" disabled>
+                <label for="reg-terms"> I agree to the <a href="#" id="termsLink">Terms &amp; conditions</a></label>
+                <span class="error-message" id="reg-terms-error"></span>
+            </div>
+            <div class="input-box">
+                <button type="button" class="submit" onclick="handleRegisterSubmit()">Register</button>
+            </div>
+        </div>
+
+        <!-- SUCCESS MESSAGE -->
+        <div class="success-container" id="success-message">
+            <div id="confetti-container"></div>
+            <div class="success-icon"><i class='bx bx-check-circle'></i></div>
+            <header id="success-header">Success!</header>
+            <p id="success-text">Redirecting you to EcoScan...</p>
+        </div>
+    </div>
+</div>
+
+<!-- TERMS MODAL -->
+<div id="termsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal-btn" id="closeTermsModalBtn">×</span>
+        <h2>Terms &amp; Conditions</h2>
+        <div class="terms-text-container" id="termsTextContainer">
+            <p><strong>Welcome to EcoScan!</strong></p>
+            <p>Last Updated: October 27, 2023</p>
+            <p>These Terms and Conditions ("Terms") govern your access to and use of the EcoScan website, application, and services (collectively, the "Service").</p>
+            <p>By accessing or using our Service, you agree to be bound by these Terms and our Privacy Policy.</p>
+            <p><strong>1. Service Description</strong></p>
+            <p>EcoScan provides a platform for users to scan physical items, particularly plastic objects, using their device's camera to identify the item or material type and receive information about its recyclability, environmental impact, or sustainable alternatives.</p>
+            <p><strong>2. User Accounts</strong></p>
+            <p>a. <strong>Registration:</strong> To use certain features of the Service, you may be required to register for an account. You agree to provide accurate, current, and complete information during the registration process.</p>
+            <p>b. <strong>Account Security:</strong> You are responsible for safeguarding your password and for any activities or actions under your account.</p>
+            <p>c. <strong>Age Restriction:</strong> You must be at least 13 years old to create an account and use the Service.</p>
+            <p><strong>3. Acceptable Use Policy</strong></p>
+            <p>You agree not to use the Service to upload, post, or transmit any content that is unlawful, harmful, threatening, abusive, harassing, defamatory, vulgar, or obscene.</p>
+            <p><strong>4. Privacy Policy</strong></p>
+            <p>We are committed to protecting your privacy. Your personal information is collected only to provide and improve the Service, and will not be sold to third parties.</p>
+            <p><strong>5. Intellectual Property</strong></p>
+            <p>All content, features, and functionality of the Service are owned by EcoScan and are protected by international copyright, trademark, and other intellectual property laws.</p>
+            <p><strong>6. Limitation of Liability</strong></p>
+            <p>EcoScan shall not be liable for any indirect, incidental, special, consequential or punitive damages resulting from your use of the service.</p>
+            <p><strong>7. Changes to Terms</strong></p>
+            <p>We reserve the right to modify these terms at any time. By continuing to use the Service after changes become effective, you agree to be bound by the revised terms.</p>
+            <p><strong>8. Governing Law</strong></p>
+            <p>These Terms shall be governed by and construed in accordance with the laws of India.</p>
+            <p><em>(End of Terms and Conditions)</em></p>
+        </div>
+        <div class="modal-footer">
+            <input type="checkbox" id="modalTermsAgreeCheckbox" disabled>
+            <label for="modalTermsAgreeCheckbox">I have read and agree to these Terms &amp; Conditions</label>
+        </div>
+    </div>
+</div>
+
+<!-- Load API bridge first, then page script -->
+<script src="api.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

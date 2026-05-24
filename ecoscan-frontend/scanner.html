@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>EcoScan — Smart Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,400;1,500&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <!-- TensorFlow.js + COCO-SSD object detection — no API key needed -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+
+  <style>
+    :root{
+      --ink:#0f1a0f; --forest:#1a3d1a; --pine:#2d6a2d;
+      --moss:#4a8c3f; --lime:#8bc34a; --cream:#f5f0e8;
+      --sand:#e8dfc8; --amber:#d4870a; --white:#fff;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;}
+
+    nav{position:sticky;top:0;z-index:200;background:rgba(245,240,232,.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.06);transition:box-shadow .3s;}
+    nav.scrolled{box-shadow:0 2px 20px rgba(0,0,0,.1);}
+    .nav-inner{max-width:1280px;margin:0 auto;padding:0 40px;height:70px;display:flex;align-items:center;justify-content:space-between;}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+    .logo-icon{width:42px;height:42px;background:var(--forest);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;}
+    .logo-text{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--forest);}
+    .nav-links{display:flex;align-items:center;gap:6px;}
+    .nav-links a{padding:7px 15px;font-size:13px;font-weight:500;color:var(--ink);text-decoration:none;border-radius:4px;transition:all .2s;}
+    .nav-links a:hover{color:var(--moss);background:rgba(74,140,63,.08);}
+    .nav-links a.active{color:var(--moss);}
+    .nav-cta{display:flex;gap:8px;}
+    .btn-nav{padding:9px 22px;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;border-radius:3px;text-decoration:none;transition:opacity .2s;border:none;cursor:pointer;}
+    .btn-login{background:var(--forest);color:#fff;}
+    .btn-login:hover{background:var(--pine);}
+
+    .page-banner{background:var(--forest);padding:56px 40px 52px;position:relative;overflow:hidden;}
+    .page-banner::before{content:'SCANNER';font-family:'Bebas Neue',cursive;font-size:200px;color:rgba(255,255,255,.04);position:absolute;right:-10px;top:50%;transform:translateY(-50%);letter-spacing:4px;pointer-events:none;line-height:1;}
+    .banner-inner{max-width:1280px;margin:0 auto;position:relative;z-index:2;}
+    .banner-kicker{display:inline-flex;align-items:center;gap:8px;background:rgba(139,195,74,.18);border:1px solid rgba(139,195,74,.3);color:var(--lime);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 16px;border-radius:2px;margin-bottom:18px;}
+    .banner-kicker span{width:7px;height:7px;border-radius:50%;background:var(--lime);display:inline-block;animation:blink 2s infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .banner-headline{font-family:'Bebas Neue',cursive;font-size:clamp(52px,8vw,96px);color:#fff;line-height:.92;letter-spacing:2px;margin-bottom:12px;}
+    .banner-headline em{font-family:'Playfair Display',serif;font-style:italic;color:var(--lime);font-size:.65em;}
+    .banner-sub{font-family:'Cormorant Garamond',serif;font-size:18px;color:rgba(255,255,255,.6);font-style:italic;max-width:540px;}
+
+    .ticker{background:var(--moss);overflow:hidden;padding:13px 0;border-top:3px solid var(--lime);border-bottom:3px solid var(--lime);}
+    .ticker-inner{display:flex;animation:marquee 30s linear infinite;white-space:nowrap;}
+    .ticker-item{font-family:'Bebas Neue',cursive;font-size:18px;color:#fff;padding:0 36px;flex-shrink:0;letter-spacing:3px;}
+    @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+    .scanner-section{padding:80px 40px;background:var(--white);}
+    .scanner-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:48px;align-items:start;}
+
+    .scan-panel{background:var(--cream);border:1px solid rgba(0,0,0,.06);}
+    .scan-panel-header{background:var(--ink);padding:28px 32px;display:flex;align-items:center;gap:16px;}
+    .scan-panel-num{font-family:'Bebas Neue',cursive;font-size:56px;color:rgba(255,255,255,.08);line-height:1;}
+    .scan-panel-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:#fff;}
+    .scan-panel-sub{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;margin-top:3px;}
+    .scan-panel-body{padding:32px;}
+
+    .action-btns{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:24px;}
+    .action-btn{padding:16px 20px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;}
+    .action-btn-primary{background:var(--forest);color:#fff;}
+    .action-btn-primary:hover{background:var(--pine);}
+    .action-btn-secondary{background:var(--sand);color:var(--ink);}
+    .action-btn-secondary:hover{background:var(--cream);border:1px solid var(--moss);color:var(--moss);}
+    .action-btn i{font-size:14px;}
+
+    .preview-area{background:var(--ink);min-height:340px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+    .preview-placeholder{text-align:center;color:rgba(255,255,255,.15);}
+    .preview-placeholder i{font-size:56px;display:block;margin-bottom:12px;}
+    .preview-placeholder span{font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:3px;}
+    #previewImage{width:100%;max-height:420px;object-fit:contain;display:none;}
+    #video{width:100%;display:none;}
+    #overlayCanvas{position:absolute;top:0;left:0;width:100%;height:100%;display:none;pointer-events:none;}
+
+    #captureBtn{display:none;width:100%;margin-top:3px;padding:15px;border:none;background:var(--amber);color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;}
+    #captureBtn:hover{opacity:.85;}
+
+    .scan-execute-btn{width:100%;margin-top:16px;padding:18px 32px;border:none;cursor:pointer;font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:3px;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .25s;background:var(--lime);color:var(--ink);}
+    .scan-execute-btn:hover:not(:disabled){background:#a5d65a;transform:translateY(-2px);}
+    .scan-execute-btn:disabled{background:var(--sand);color:#aaa;cursor:not-allowed;transform:none;}
+
+    .loading-bar{display:none;margin-top:16px;text-align:center;padding:14px;background:rgba(26,61,26,.08);border-left:3px solid var(--lime);}
+    .loading-bar span{font-size:13px;color:var(--moss);font-weight:600;letter-spacing:.5px;}
+    .loading-bar i{animation:spin 1s linear infinite;margin-right:8px;color:var(--lime);}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .results-panel{}
+    .results-placeholder{background:var(--forest);padding:56px 40px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .results-placeholder-icon{font-size:64px;color:rgba(255,255,255,.15);display:block;margin-bottom:16px;}
+    .results-placeholder-text{font-family:'Playfair Display',serif;font-size:18px;color:rgba(255,255,255,.35);font-style:italic;}
+
+    .result-header{background:var(--ink);padding:24px 28px;display:flex;align-items:center;justify-content:space-between;}
+    .result-header-label{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:3px;text-transform:uppercase;}
+    .result-header-obj{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:#fff;margin-top:4px;}
+
+    .recycle-badge-wrap{padding:28px;background:var(--forest);}
+    .recycle-status{font-family:'Bebas Neue',cursive;font-size:36px;letter-spacing:3px;padding:12px 20px;display:inline-block;}
+    .badge-yes{background:var(--lime);color:var(--ink);}
+    .badge-no{background:#dc2626;color:#fff;}
+    .badge-partial{background:var(--amber);color:#fff;}
+    .badge-special{background:#0ea5e9;color:#fff;}
+    .recycle-reason{font-size:13px;color:rgba(255,255,255,.6);line-height:1.75;margin-top:12px;}
+
+    .conf-wrap{padding:24px 28px;background:var(--sand);border-bottom:1px solid rgba(0,0,0,.06);}
+    .conf-label{font-size:10px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+    .conf-track{height:6px;background:rgba(0,0,0,.1);border-radius:99px;overflow:hidden;}
+    .conf-fill{height:100%;background:linear-gradient(90deg,var(--lime),var(--amber));border-radius:99px;transition:width .8s ease;width:0%;}
+    .conf-pct{font-family:'Bebas Neue',cursive;font-size:32px;color:var(--moss);margin-top:6px;}
+
+    .info-card{padding:24px 28px;border-bottom:1px solid rgba(0,0,0,.06);background:var(--cream);}
+    .info-card:last-child{border-bottom:none;}
+    .info-card-label{font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:2px;color:var(--moss);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+    .info-card-label i{font-size:12px;}
+    .info-card-text{font-size:13px;color:#555;line-height:1.8;}
+    .material-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+    .mtag{background:var(--sand);color:var(--moss);border:1px solid rgba(74,140,63,.2);font-size:11px;font-weight:600;padding:4px 12px;border-radius:2px;letter-spacing:.5px;}
+
+    .detections-section{display:none;padding:24px 28px;background:var(--white);border-bottom:1px solid rgba(0,0,0,.06);}
+    .detections-label{font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:2px;color:#aaa;margin-bottom:10px;}
+    .dpill{display:inline-block;background:var(--sand);border:1px solid rgba(0,0,0,.08);font-size:12px;padding:4px 12px;border-radius:2px;margin:3px;color:var(--ink);}
+    .dpill strong{color:var(--moss);}
+
+    footer{background:#0a0f0a;border-top:3px solid var(--moss);}
+    .footer-inner{max-width:1280px;margin:0 auto;padding:64px 40px 32px;}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
+    .footer-logo-text{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--lime);}
+    .footer-tagline{font-family:'Cormorant Garamond',serif;font-size:15px;color:rgba(255,255,255,.35);line-height:1.8;font-style:italic;max-width:280px;margin-top:12px;}
+    .footer-col-title{font-family:'Bebas Neue',cursive;font-size:20px;color:var(--lime);letter-spacing:3px;margin-bottom:18px;}
+    .footer-col ul{list-style:none;}
+    .footer-col li{margin-bottom:10px;}
+    .footer-col a{color:rgba(255,255,255,.32);font-size:13px;text-decoration:none;transition:color .2s;}
+    .footer-col a:hover{color:var(--lime);}
+    .footer-bottom{border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;justify-content:space-between;align-items:center;}
+    .footer-bottom span{font-size:11px;color:rgba(255,255,255,.2);letter-spacing:.8px;}
+    .footer-bottom em{font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(255,255,255,.15);}
+
+    @media(max-width:900px){
+      .scanner-inner{grid-template-columns:1fr;}
+    }
+    @media(max-width:600px){
+      .scanner-section{padding:40px 20px;}
+      .page-banner{padding:40px 20px 36px;}
+      .nav-inner{padding:0 20px;}
+      .nav-links{display:none;}
+      .action-btns{grid-template-columns:1fr;}
+      .footer-grid{grid-template-columns:1fr;}
+    }
+  </style>
+<script>if(!sessionStorage.getItem("ecoscan_auth")){alert("Please login first!");window.location.href="login.html";}</script>
+</head>
+<body>
+
+<nav id="mainNav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon"><i class="fas fa-recycle"></i></div>
+      <div><div class="logo-text">EcoScan</div></div>
+    </a>
+    <div class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="#" class="active">Scanner</a>
+      <a href="rewards.html">Rewards</a>
+      <a href="how-it-works.html">How It Works</a>
+    </div>
+    <div class="nav-cta">
+      <a href="logout.html" class="btn-nav btn-login">Logout →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page-banner">
+  <div class="banner-inner">
+    <div class="banner-kicker"><span></span> AI-Powered Detection</div>
+    <div class="banner-headline">Smart<br><em>Scanner.</em></div>
+    <p class="banner-sub">Upload an image or use your camera — detects 80+ objects with recycling guidance. No API key required.</p>
+  </div>
+</div>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">♻ SCAN ANY OBJECT</span>
+    <span class="ticker-item">🌱 GET RECYCLING GUIDANCE</span>
+    <span class="ticker-item">💡 AI-POWERED DETECTION</span>
+    <span class="ticker-item">🔍 80+ OBJECTS SUPPORTED</span>
+    <span class="ticker-item">📷 UPLOAD OR CAMERA</span>
+    <span class="ticker-item">✊ RECYCLE SMARTER</span>
+    <span class="ticker-item">♻ SCAN ANY OBJECT</span>
+    <span class="ticker-item">🌱 GET RECYCLING GUIDANCE</span>
+    <span class="ticker-item">💡 AI-POWERED DETECTION</span>
+    <span class="ticker-item">🔍 80+ OBJECTS SUPPORTED</span>
+    <span class="ticker-item">📷 UPLOAD OR CAMERA</span>
+    <span class="ticker-item">✊ RECYCLE SMARTER</span>
+  </div>
+</div>
+
+<section class="scanner-section">
+  <div class="scanner-inner">
+
+    <div class="scan-panel">
+      <div class="scan-panel-header">
+        <div class="scan-panel-num">01</div>
+        <div>
+          <div class="scan-panel-title">Scan Your Item</div>
+          <div class="scan-panel-sub">Upload Image · Open Camera</div>
+        </div>
+      </div>
+      <div class="scan-panel-body">
+
+        <div class="action-btns">
+          <button class="action-btn action-btn-primary" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-upload"></i> Upload Image
+          </button>
+          <button class="action-btn action-btn-secondary" onclick="openCamera()">
+            <i class="fas fa-camera"></i> Open Camera
+          </button>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="uploadImage(event)">
+
+        <div class="preview-area" id="previewArea">
+          <div class="preview-placeholder" id="previewPlaceholder">
+            <i class="fas fa-camera-retro"></i>
+            <span>No Image Selected</span>
+          </div>
+          <video id="video" autoplay playsinline></video>
+          <canvas id="hiddenCanvas" style="display:none"></canvas>
+          <img id="previewImage" alt="Preview">
+          <canvas id="overlayCanvas"></canvas>
+        </div>
+
+        <button id="captureBtn" onclick="captureImage()">
+          <i class="fas fa-circle"></i> &nbsp;Capture Photo
+        </button>
+
+        <button class="scan-execute-btn" id="scanButton" disabled onclick="scanObject()">
+          <i class="fas fa-recycle"></i> Scan Object
+        </button>
+
+        <div class="loading-bar" id="loadingText">
+          <i class="fas fa-spinner"></i>
+          <span id="loadingMsg">Loading AI model…</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="results-panel" id="resultsPanel">
+      <div id="resultsPlaceholder" class="results-placeholder">
+        <i class="fas fa-leaf results-placeholder-icon"></i>
+        <div class="results-placeholder-text">Scan an item to see<br>recycling guidance here.</div>
+      </div>
+
+      <div id="resultSection" style="display:none;">
+        <div class="result-header">
+          <div>
+            <div class="result-header-label">Detected Object</div>
+            <div class="result-header-obj" id="objectType">—</div>
+          </div>
+          <i class="fas fa-check-circle" style="color:var(--lime);font-size:24px;"></i>
+        </div>
+
+        <div class="detections-section" id="allDetections">
+          <div class="detections-label">All Detected Objects</div>
+          <div id="detectionPills"></div>
+        </div>
+
+        <div class="recycle-badge-wrap">
+          <div class="recycle-status" id="recycleBadge">—</div>
+          <div class="recycle-reason" id="recycleReason"></div>
+        </div>
+
+        <div class="conf-wrap">
+          <div class="conf-label">Detection Confidence</div>
+          <div class="conf-track"><div class="conf-fill" id="confBar"></div></div>
+          <div class="conf-pct" id="confidence">0%</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-label"><i class="fas fa-layer-group"></i> Material</div>
+          <div class="info-card-text" id="materialType">—</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-label"><i class="fas fa-info-circle"></i> Material Information</div>
+          <div class="info-card-text" id="plasticInfo">—</div>
+          <div class="material-tags" id="materialTags"></div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-label"><i class="fas fa-leaf"></i> Eco Suggestion</div>
+          <div class="info-card-text" id="ecoSuggestion">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div style="width:38px;height:38px;background:var(--moss);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;"><i class="fas fa-recycle"></i></div>
+          <div class="footer-logo-text">EcoScan</div>
+        </div>
+        <p class="footer-tagline">Empowering India's recycling ecosystem through technology-enabled waste management. Cleaner India, Greener Future.</p>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Pages</div>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="how-it-works.html">How It Works</a></li>
+          <li><a href="index.html#map">Recyclers Map</a></li>
+          <li><a href="rewards.html">Rewards</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">App</div>
+        <ul>
+          <li><a href="login.html">Login / Sign Up</a></li>
+          <li><a href="scanner.html">Scanner</a></li>
+          <li><a href="rewards.html">Rewards</a></li>
+          <li><a href="how-it-works.html">How It Works</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Contact</div>
+        <ul>
+          <li><a href="#">+91-6291559908</a></li>
+          <li><a href="#">info@ecoscan.com</a></li>
+          <li><a href="#">Sridevi Women's Engineering College</a></li>
+          <li><a href="#">Hyderabad, India</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ECOSCAN · ALL RIGHTS RESERVED</span>
+      <em>Sridevi Women's Engineering College</em>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Navbar scroll ──
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+let stream = null;
+let selectedImage = null; // HTMLImageElement or HTMLVideoElement snapshot
+let cocoModel = null;
+
+// ── Load COCO-SSD model eagerly in background ──
+(async function preloadModel() {
+  try {
+    cocoModel = await cocoSsd.load();
+    console.log('COCO-SSD model ready');
+  } catch(e) {
+    console.warn('Model preload failed, will retry on scan:', e);
+  }
+})();
+
+// ── Points banner ──
+const pointsBannerEl = document.createElement('div');
+pointsBannerEl.id = 'pointsBanner';
+pointsBannerEl.style.cssText = 'display:none;position:fixed;top:80px;right:24px;background:#4caf50;color:#fff;padding:12px 24px;border-radius:8px;font-weight:700;font-size:15px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.18);';
+document.body.appendChild(pointsBannerEl);
+
+// ── Recycling knowledge database (80+ COCO objects mapped) ──
+const objectDB = {
+  'bottle':       { material:'Plastic (PET #1)', recyclable:'yes',     reason:'PET plastic bottles are widely accepted at recycling centers across India.',               info:'PET bottles are melted and remade into new bottles, clothing fibers, and carpet.',                                           eco:'Rinse, remove the cap separately, and place in your recycling bin.',                                tags:['PET #1','Plastic','Widely Recycled'] },
+  'cup':          { material:'Plastic / Paper (mixed)', recyclable:'partial', reason:'Disposable cups combine plastic lining and paper, making them hard to recycle.',       info:'The thin polyethylene coating inside prevents liquid leakage — and recycling.',                                           eco:'Switch to a reusable cup. Check if your local facility accepts coated cups.',           tags:['Mixed Material','Plastic Lined','Hard to Recycle'] },
+  'wine glass':   { material:'Glass', recyclable:'yes',     reason:'Glass is 100% recyclable and can be recycled endlessly without quality loss.',                          info:'Recycled glass melts at a lower temperature, saving energy in production.',                                              eco:'Place in glass recycling bin. Remove corks or metal caps first.',                       tags:['Glass','100% Recyclable','Infinitely Recyclable'] },
+  'cell phone':   { material:'E-Waste (Metal, Plastic, Glass)', recyclable:'special', reason:'Phones contain gold, silver, copper, and toxic materials needing specialist recycling.', info:'A single smartphone contains over 60 different elements.',                                                         eco:'Never bin it. Drop off at an e-waste collection center or certified e-recycler.',       tags:['E-Waste','Hazardous','Special Recycling Required'] },
+  'laptop':       { material:'E-Waste (Metal, Plastic, Battery)', recyclable:'special', reason:'Laptops contain lithium batteries and circuit boards with heavy metals.',      info:'Laptop batteries can cause fires if improperly disposed.',                                                              eco:'Take to a certified e-waste recycler or manufacturer return program.',                  tags:['E-Waste','Battery Hazard','Special Recycling Required'] },
+  'tv':           { material:'E-Waste (Plastic, Metal, Glass)', recyclable:'special', reason:'TVs contain lead and hazardous materials needing certified recyclers.',         info:'LCD/LED TVs may contain mercury in backlights. CRT TVs have up to 3.5 kg of lead.',                                    eco:'Contact your municipality for e-waste collection, or return to the retailer.',          tags:['E-Waste','Lead/Mercury Risk','Special Recycling Required'] },
+  'keyboard':     { material:'Plastic + Electronics', recyclable:'special', reason:'Circuit boards inside make the whole unit e-waste.',                                     info:'Keycaps are typically ABS plastic — recyclable alone, but the PCB makes it e-waste.',                                  eco:'Donate if working. Otherwise take to an e-waste facility.',                            tags:['E-Waste','ABS Plastic','Donate if Working'] },
+  'mouse':        { material:'Plastic + Electronics', recyclable:'special', reason:'Internal circuit boards classify computer mice as e-waste.',                             info:'Wireless mice also contain batteries, adding another layer of hazardous material.',                                    eco:'Remove batteries first, then take to an e-waste collection point.',                    tags:['E-Waste','Circuit Board','E-Waste Collection'] },
+  'microwave':    { material:'E-Waste (Metal, Plastic)', recyclable:'special', reason:'Microwaves contain capacitors that retain dangerous charge even when unplugged.',     info:'Never attempt to disassemble — the capacitor can store a lethal charge.',                                              eco:'Contact local council for large appliance collection or an authorised e-waste facility.',tags:['E-Waste','Hazardous Capacitor','Large Appliance'] },
+  'refrigerator': { material:'Metal + Refrigerant Gas', recyclable:'special', reason:'Fridges contain HFC gases — potent greenhouse gases that must be safely recovered.',   info:'The steel body is fully recyclable once gases are removed.',                                                            eco:'Never crush or puncture. Contact your local council for gas-recovery collection.',      tags:['WEEE','Refrigerant Gas','Specialist Collection Only'] },
+  'chair':        { material:'Wood / Metal / Plastic (varies)', recyclable:'partial', reason:'Recyclability depends on material — wood is biodegradable, metal is scrap.',  info:'Solid wood chairs can be composted or repurposed. Metal chairs go to scrap metal.',                                    eco:'Donate to charity if still usable. Check your chair\'s material before disposal.',     tags:['Wood / Metal / Plastic','Donate First','Check Material'] },
+  'couch':        { material:'Mixed (Fabric, Foam, Wood, Metal)', recyclable:'no',   reason:'Sofas combine fabric, foam, springs, and wood — extremely difficult to recycle.',info:'Steel springs and wood frame can be separated and recycled individually.',                                               eco:'Donate to a charity shop or furniture bank if still usable.',                          tags:['Mixed Material','Hard to Recycle','Donate if Usable'] },
+  'banana':       { material:'Organic Waste', recyclable:'yes',     reason:'Banana peels are 100% compostable and biodegradable.',                                          info:'Banana peels decompose within 2–5 weeks, enriching soil with potassium and phosphorus.',                                eco:'Add to your home compost or food waste bin.',                                          tags:['Organic','Compostable','Biodegradable'] },
+  'apple':        { material:'Organic Waste', recyclable:'yes',     reason:'Apples and apple cores are fully compostable.',                                                 info:'Apple cores break down quickly in compost, adding nitrogen and moisture.',                                              eco:'Add to compost or food waste bin.',                                                   tags:['Organic','Compostable','Food Waste'] },
+  'orange':       { material:'Organic Waste', recyclable:'yes',     reason:'Orange peels are compostable, though they take longer due to their thick skin.',                info:'Citrus peels contain limonene — a natural pesticide in the compost pile.',                                             eco:'Add to compost in small quantities.',                                                  tags:['Organic','Compostable','Citrus — Use Sparingly'] },
+  'car':          { material:'Metal, Plastic, Glass, Rubber, Fluids', recyclable:'yes', reason:'About 80% of a car by weight is recyclable — one of the most recycled products globally.', info:'Steel and aluminium from cars are highly valuable scrap.',                                                       eco:'Take to an Authorised Treatment Facility. Never abandon or burn a vehicle.',           tags:['Steel','Aluminium','~80% Recyclable by Weight'] },
+  'bicycle':      { material:'Metal (Steel / Aluminium)', recyclable:'yes',   reason:'Bicycles are primarily steel or aluminium — both fully recyclable.',                  info:'Aluminium frame bikes are higher-value scrap than steel.',                                                              eco:'Donate to a bike repair charity if still rideable. Otherwise, scrap metal yard.',      tags:['Metal','Steel / Aluminium','Donate if Rideable'] },
+  'book':         { material:'Paper / Cardboard', recyclable:'yes',   reason:'Books are primarily paper, which is fully recyclable.',                                       info:'Recycling 1 tonne of paper saves 17 trees and 7,000 gallons of water.',                                                eco:'Donate books in good condition to libraries, schools, or charity shops.',              tags:['Paper','Recyclable','Donate First'] },
+  'knife':        { material:'Stainless Steel', recyclable:'yes',   reason:'Stainless steel knives are fully recyclable as scrap metal.',                                   info:'Stainless steel has an 85%+ global recovery rate.',                                                                    eco:'Keep knives sharp and they last decades. Donate usable knives.',                      tags:['Stainless Steel','Scrap Metal','Long-Lasting'] },
+  'fork':         { material:'Stainless Steel / Plastic', recyclable:'yes',   reason:'Metal forks are recyclable scrap. Plastic forks are rarely accepted in recycling.',  info:'Single-use plastic cutlery is banned in several countries due to poor recyclability.',                                 eco:'Use metal cutlery — it lasts a lifetime. Avoid single-use plastic entirely.',         tags:['Stainless Steel (Recyclable)','Plastic Forks = Avoid','Use Reusables'] },
+  'spoon':        { material:'Stainless Steel / Plastic', recyclable:'yes',   reason:'Metal spoons are fully recyclable. Plastic spoons are rarely accepted curbside.',     info:'A metal spoon used daily lasts decades at a fraction of the environmental cost of plastic.',                            eco:'Carry your own metal spoon to avoid single-use plastic.',                             tags:['Stainless Steel (Recyclable)','Avoid Plastic Spoons','Carry Reusable'] },
+  'bowl':         { material:'Ceramic / Plastic / Glass (varies)', recyclable:'partial', reason:'Ceramic bowls cannot go in glass recycling — different melting points.',   info:'Ceramic contaminates glass recycling batches.',                                                                        eco:'Donate usable bowls to charity shops. Check material before recycling.',              tags:['Ceramic / Plastic / Glass','Check Material','Donate if Usable'] },
+  'scissors':     { material:'Metal (Stainless Steel)', recyclable:'yes',   reason:'Stainless steel scissors are fully recyclable as scrap metal.',                         info:'Stainless and carbon steel are both indefinitely recyclable without quality loss.',                                    eco:'Blunt scissors can be sharpened and reused.',                                         tags:['Metal','Steel','Scrap Metal'] },
+  'toothbrush':   { material:'Plastic (Nylon + PP/PE handle)', recyclable:'partial', reason:'Mixed plastics and nylon bristles make standard recycling difficult.',         info:'4.7 billion plastic toothbrushes are discarded globally every year.',                                                  eco:'Switch to bamboo toothbrushes. Some brands offer mail-in recycling programs.',        tags:['Mixed Plastic','Nylon Bristles','Bamboo Alternative'] },
+  'potted plant': { material:'Organic + Plastic Pot', recyclable:'partial', reason:'The plant is compostable; the plastic pot may be recyclable depending on resin type.',  info:'Garden pots are often polypropylene (#5 PP) — recyclable but not always accepted curbside.',                           eco:'Compost the soil and plant. Check if your council accepts black plastic pots.',       tags:['Compostable (Plant)','Plastic Pot','Check Local Rules'] },
+  'vase':         { material:'Glass / Ceramic', recyclable:'partial', reason:'Decorative glass and ceramics often not accepted in curbside programs.',                       info:'Decorative glass has different chemical properties that contaminate container-glass batches.',                          eco:'Donate usable vases. If broken, wrap safely before disposing in general waste.',      tags:['Glass','Ceramic','Donate if Usable'] },
+  'clock':        { material:'Mixed (Plastic, Metal, Battery)', recyclable:'partial', reason:'Clocks contain batteries and mixed materials — battery needs separate handling.', info:'Quartz movements contain small amounts of electronics.',                                                              eco:'Remove and recycle the battery at a battery drop-off. Donate the clock if working.', tags:['Mixed Material','Battery','Donate if Working'] },
+  'remote':       { material:'Plastic + Circuit Board + Battery', recyclable:'special', reason:'Remote controls contain batteries and circuit boards — e-waste.',            info:'The batteries are the most hazardous part. Remove before disposal.',                                                   eco:'Remove batteries first and recycle at battery collection points.',                    tags:['E-Waste','Battery','Remove Battery First'] },
+  'person':       { material:'N/A — Human Being', recyclable:'no',   reason:'This appears to be a person in the image.',                                                    info:'Try pointing the camera at a plastic bottle, container, or packaging item.',                                            eco:'You can make a huge difference: carry a reusable bottle, bag, and cutlery.',         tags:['Not an Object','Try Again with Packaging'] },
+  'sports ball':  { material:'Rubber / Leather / Synthetic', recyclable:'partial', reason:'Mixed rubber and synthetic materials are hard to recycle through standard channels.', info:'Old balls can often be donated to schools or sports charities.',                                                    eco:'Donate usable balls rather than disposing.',                                          tags:['Rubber','Synthetic','Donate First'] },
+  'cat':          { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                 info:'If a pet has passed away, consult your vet for compassionate options.',                                                eco:'Your cat produces organic waste — use biodegradable litter.',                         tags:['Not Waste','Living Being','No Action Needed'] },
+  'dog':          { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                 info:'Dogs produce waste that should be collected in biodegradable bags.',                                                   eco:'Use compostable dog waste bags.',                                                     tags:['Not Waste','Living Being','No Action Needed'] },
+  'handbag':      { material:'Leather / Synthetic / Fabric', recyclable:'partial', reason:'Bags mix leather, metal hardware, and fabric — difficult to separate.',          info:'Genuine leather can be composted but takes years. Synthetic leather is plastic.',                                     eco:'Donate usable bags. Many charity shops accept them.',                                 tags:['Mixed Material','Leather / Synthetic','Donate First'] },
+  'backpack':     { material:'Nylon / Polyester + Metal Zips', recyclable:'partial', reason:'Nylon and polyester are technically recyclable but rarely accepted curbside.',  info:'Some brands (Patagonia, The North Face) run take-back programs.',                                                      eco:'Donate if usable. Check brand take-back programs.',                                  tags:['Synthetic Fabric','Metal Zips','Take-Back Program'] },
+  'umbrella':     { material:'Metal + Nylon + Plastic', recyclable:'partial', reason:'Mixed metal frame and nylon canopy are difficult to separate for recycling.',          info:'The metal ribs are steel and fully recyclable if separated.',                                                          eco:'Repair if possible. Disassemble metal parts for scrap if beyond repair.',            tags:['Mixed Material','Metal Frame','Repair First'] },
+  'tie':          { material:'Silk / Polyester', recyclable:'no',     reason:'Fabric accessories are not accepted in standard recycling streams.',                           info:'Polyester ties are made from plastic — petroleum-based fibers.',                                                       eco:'Donate to charity shops. Some textile banks accept accessories.',                    tags:['Textile','Donate','Textile Bank'] },
+  'suitcase':     { material:'ABS Plastic / Polycarbonate + Metal', recyclable:'partial', reason:'Hard-shell suitcases are ABS or polycarbonate — technically recyclable but rarely accepted.', info:'ABS is one of the most durable plastics and is used in Lego bricks.',                              eco:'Donate usable luggage. Many charities and refugee organisations need them.',         tags:['ABS Plastic','Polycarbonate','Donate if Usable'] },
+  'frisbee':      { material:'Plastic (LDPE / HDPE)', recyclable:'yes',   reason:'Most frisbees are low-density or high-density polyethylene — widely recyclable.',         info:'HDPE (plastic #2) is one of the most recyclable plastics globally.',                                                  eco:'Check for the resin code. HDPE and LDPE frisbees can go in recycling bins.',        tags:['LDPE / HDPE','Plastic #2','Check Resin Code'] },
+  'skis':         { material:'Composite (Carbon / Fibreglass + Metal)', recyclable:'partial', reason:'Ski composites mix fibreglass, carbon, steel edges — hard to separate.', info:'Some ski brands run end-of-life take-back or refurbishment programs.',                                              eco:'Donate usable skis to ski schools or charity shops.',                                tags:['Composite','Fibreglass','Donate if Usable'] },
+  'baseball bat': { material:'Wood / Aluminium', recyclable:'yes',   reason:'Wooden bats are biodegradable; aluminium bats are fully recyclable as scrap.',                 info:'Aluminium is infinitely recyclable and retains full quality.',                                                         eco:'Donate to sports clubs. Aluminium bats go to scrap metal when done.',               tags:['Wood / Aluminium','Recyclable','Donate First'] },
+  'skateboard':   { material:'Maple Wood + Plastic + Metal', recyclable:'partial', reason:'Maple decks are biodegradable; plastic trucks and metal bearings separate easily.', info:'Old skateboard decks are repurposed into furniture and accessories by some artists.',                              eco:'Donate or repurpose. Metal parts go to scrap.',                                      tags:['Maple Wood','Plastic Trucks','Creative Reuse'] },
+  'surfboard':    { material:'Polyurethane Foam + Fibreglass', recyclable:'no',    reason:'Polyurethane foam and fibreglass resin are extremely difficult to recycle.',      info:'Surfboard foam releases toxic isocyanates if incinerated.',                                                            eco:'Donate usable boards. Some shapers accept old boards for repair.',                   tags:['Polyurethane','Fibreglass','Hard to Recycle'] },
+  'tennis racket':{ material:'Carbon Fibre / Graphite + Strings', recyclable:'partial', reason:'Carbon fibre composites are not accepted in standard recycling.',           info:'Tennis strings are nylon or polyester — both technically recyclable.',                                                 eco:'Donate if playable. Check sports charity programs.',                                 tags:['Carbon Fibre','Strings','Donate First'] },
+  'bottle':       { material:'Plastic (PET #1)', recyclable:'yes',     reason:'PET plastic bottles are one of the most widely recycled materials.',                         info:'PET is melted and remade into bottles, polyester clothing, and carpet fibre.',                                         eco:'Rinse and remove the cap. Do not crush — sorting machines rely on shape.',          tags:['PET #1','Plastic','Widely Recycled'] },
+  'wine glass':   { material:'Glass', recyclable:'yes',     reason:'Glass is 100% recyclable with no quality degradation.',                                                  info:'Recycling 1 tonne of glass saves 315 kg of CO₂ emissions.',                                                           eco:'Rinse and place in the glass bin. Remove any metal wine charms.',                   tags:['Glass','100% Recyclable','CO₂ Saving'] },
+  'pizza':        { material:'Organic + Cardboard (box)', recyclable:'partial', reason:'The pizza itself is compostable; greasy pizza boxes contaminate paper recycling.',   info:'Even small amounts of grease render paper fibres unrecyclable.',                                                       eco:'Compost the pizza. Tear off clean parts of the box for recycling; bin the greasy lid.',tags:['Organic','Greasy Cardboard','Compost Pizza'] },
+  'sandwich':     { material:'Organic Waste', recyclable:'yes',     reason:'Food waste is fully compostable.',                                                              info:'Food waste in landfill produces methane — 28x more potent than CO₂ over 100 years.',                                 eco:'Compost all food scraps. Use a countertop compost bin.',                             tags:['Organic','Compostable','Food Waste'] },
+  'hot dog':      { material:'Organic Waste', recyclable:'yes',     reason:'Food scraps are fully compostable.',                                                            info:'Composting food waste returns nutrients to the soil naturally.',                                                       eco:'Add to your compost or food waste caddy.',                                           tags:['Organic','Compostable','Food Waste'] },
+  'carrot':       { material:'Organic Waste', recyclable:'yes',     reason:'Vegetable scraps are 100% compostable.',                                                        info:'Carrot tops and peelings break down rapidly in compost.',                                                              eco:'Add to compost. Carrot tops are also edible in salads and pesto.',                  tags:['Organic','Compostable','Zero Waste'] },
+  'broccoli':     { material:'Organic Waste', recyclable:'yes',     reason:'All vegetable matter is fully compostable.',                                                    info:'Broccoli stalks take slightly longer to compost — chop them up to speed decomposition.',                              eco:'Compost all scraps. Broccoli stalks are edible and delicious roasted.',             tags:['Organic','Compostable','Edible Scraps'] },
+  'kite':         { material:'Plastic / Nylon + Fibreglass', recyclable:'partial', reason:'Kites mix nylon fabric with fibreglass rods — hard to recycle together.',       info:'Fibreglass is a thermoset composite and cannot be melted for recycling.',                                              eco:'Repair tears before discarding. Pass on to others or donate.',                      tags:['Nylon','Fibreglass','Repair First'] },
+  'traffic light':{ material:'Metal + Plastic + LED', recyclable:'special', reason:'Traffic lights are council infrastructure — returned to local authority for disposal.', info:'Modern LED traffic lights use 80% less energy than incandescent versions.',                                            eco:'Report broken lights to your local council.',                                        tags:['Council Infrastructure','LED','Report to Council'] },
+  'fire hydrant': { material:'Cast Iron / Ductile Iron', recyclable:'yes',   reason:'Cast iron is fully recyclable as scrap metal.',                                        info:'Cast iron hydrants last 50–100 years before replacement.',                                                             eco:'Report damaged hydrants to local water authority. Decommissioned ones go to scrap.',tags:['Cast Iron','Scrap Metal','Long-Life Infrastructure'] },
+  'bench':        { material:'Wood / Metal / Concrete (varies)', recyclable:'partial', reason:'Recyclability varies by material — metal and wood are recyclable; concrete is not.',info:'Treated timber may not be accepted in standard green waste.',                                                    eco:'Donate usable benches. Metal to scrap, untreated wood to green waste.',             tags:['Mixed Material','Metal / Wood','Check Material'] },
+  'bird':         { material:'Organic (Animal)', recyclable:'no',     reason:'Wildlife are not waste items.',                                                               info:'Many bird species help control insect populations and pollinate plants.',                                               eco:'Provide bird feeders and nesting boxes to support local bird populations.',          tags:['Not Waste','Living Being','Support Wildlife'] },
+  'horse':        { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                info:'Horse manure is excellent compost and a valuable soil conditioner.',                                                   eco:'Horse manure can be composted and used as garden fertiliser.',                      tags:['Not Waste','Living Being','Manure = Great Compost'] },
+  'sheep':        { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                info:'Wool from sheep is one of the most naturally sustainable fibres available.',                                           eco:'Choose wool products — they are biodegradable and long-lasting.',                   tags:['Not Waste','Living Being','Wool = Sustainable'] },
+  'cow':          { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                info:'Cattle produce methane — reducing beef consumption is one of the highest-impact climate actions.',                   eco:'Reducing beef intake significantly lowers your carbon footprint.',                   tags:['Not Waste','Living Being','Climate Impact'] },
+  'elephant':     { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                info:'Elephants are keystone species — their dung spreads seeds and fertilises ecosystems.',                                eco:'Support wildlife conservation organisations.',                                        tags:['Not Waste','Living Being','Endangered Species'] },
+  'giraffe':      { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                info:'Giraffes are listed as vulnerable — habitat loss is the primary threat.',                                             eco:'Support habitat conservation to protect large mammals.',                             tags:['Not Waste','Living Being','Support Conservation'] },
+  'zebra':        { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                info:'Zebra stripes are unique — no two zebras have the same pattern.',                                                     eco:'Support African wildlife conservation programmes.',                                  tags:['Not Waste','Living Being','Support Wildlife'] },
+  'bear':         { material:'Organic (Animal)', recyclable:'no',     reason:'Animals are not waste items.',                                                                info:'Bears are important seed dispersers and contribute to forest ecosystem health.',                                      eco:'Secure food waste in bear-proof containers in bear country.',                        tags:['Not Waste','Living Being','Ecosystem Role'] },
+};
+
+function getDefaultData(name) {
+  return {
+    material: 'Unknown / Mixed Material',
+    recyclable: 'partial',
+    reason: 'We couldn\'t determine the exact recyclability. Check the label or material markings on the item.',
+    info: `Detected object: "${name}". Look for the recycling symbol (♻) and resin code on the item for guidance.`,
+    eco: 'When in doubt — check local recycling guidelines. Most councils have online recycling checkers.',
+    tags: ['Check Label', 'Local Recycling Guide', 'Look for Resin Code']
+  };
+}
+
+// ── Camera / Upload ──
+function uploadImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  // Reset file input so the same file can be re-selected
+  event.target.value = '';
+  selectedImage = null;
+  document.getElementById('scanButton').disabled = true;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('previewImage');
+    // Wait for the image to fully load before allowing scan
+    img.onload = function() {
+      selectedImage = img;
+      document.getElementById('scanButton').disabled = false;
+    };
+    img.onerror = function() {
+      alert('Could not load image. Please try a different file.');
+    };
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('previewPlaceholder').style.display = 'none';
+    document.getElementById('overlayCanvas').style.display = 'none';
+    hideCamera();
+    document.getElementById('resultSection').style.display = 'none';
+    document.getElementById('resultsPlaceholder').style.display = 'flex';
+    document.getElementById('allDetections').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function openCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    selectedImage = video;
+    document.getElementById('captureBtn').style.display = 'block';
+    document.getElementById('previewImage').style.display = 'none';
+    document.getElementById('overlayCanvas').style.display = 'none';
+    document.getElementById('previewPlaceholder').style.display = 'none';
+    document.getElementById('scanButton').disabled = false;
+  } catch (e) {
+    alert('Camera permission denied or not available.');
+  }
+}
+
+function hideCamera() {
+  document.getElementById('video').style.display = 'none';
+  document.getElementById('captureBtn').style.display = 'none';
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+function captureImage() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('hiddenCanvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+
+  selectedImage = null;
+  document.getElementById('scanButton').disabled = true;
+
+  const img = document.getElementById('previewImage');
+  img.onload = function() {
+    selectedImage = img;
+    document.getElementById('scanButton').disabled = false;
+  };
+  img.src = canvas.toDataURL('image/png');
+  img.style.display = 'block';
+  document.getElementById('overlayCanvas').style.display = 'none';
+  document.getElementById('previewPlaceholder').style.display = 'none';
+  hideCamera();
+  document.getElementById('resultSection').style.display = 'none';
+  document.getElementById('resultsPlaceholder').style.display = 'flex';
+  document.getElementById('allDetections').style.display = 'none';
+}
+
+// ── Draw bounding boxes on overlay canvas ──
+function drawBoxes(source, predictions, isVideo) {
+  const previewArea = document.getElementById('previewArea');
+  const overlay = document.getElementById('overlayCanvas');
+  const areaW = previewArea.clientWidth;
+  const areaH = previewArea.clientHeight;
+
+  overlay.width  = areaW;
+  overlay.height = areaH;
+
+  const srcW = isVideo ? source.videoWidth  : source.width;
+  const srcH = isVideo ? source.videoHeight : source.height;
+
+  const scale = Math.min(areaW / srcW, areaH / srcH);
+  const offX  = (areaW - srcW * scale) / 2;
+  const offY  = (areaH - srcH * scale) / 2;
+
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0, 0, areaW, areaH);
+
+  const colors = ['#8bc34a', '#d4870a', '#4dd0e1', '#f87171', '#a855f7'];
+  predictions.forEach((pred, i) => {
+    const [x, y, w, h] = pred.bbox;
+    const rx = offX + x * scale;
+    const ry = offY + y * scale;
+    const rw = w * scale;
+    const rh = h * scale;
+    const color = colors[i % colors.length];
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(rx, ry, rw, rh);
+
+    const label = pred.class + ' ' + Math.round(pred.score * 100) + '%';
+    const fs = Math.max(12, Math.min(16, areaW / 40));
+    ctx.font = `bold ${fs}px 'DM Sans', sans-serif`;
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = color;
+    ctx.fillRect(rx, ry - fs - 6, tw + 10, fs + 8);
+    ctx.fillStyle = '#0f1a0f';
+    ctx.fillText(label, rx + 5, ry - 4);
+  });
+
+  overlay.style.display = 'block';
+}
+
+// ── All-detections pills ──
+function showDetectionPills(predictions) {
+  const container = document.getElementById('detectionPills');
+  container.innerHTML = predictions.map(p =>
+    `<span class="dpill">${p.class.charAt(0).toUpperCase() + p.class.slice(1)} <strong>${Math.round(p.score * 100)}%</strong></span>`
+  ).join('');
+  document.getElementById('allDetections').style.display = predictions.length > 1 ? 'block' : 'none';
+}
+
+// ── Main scan — TensorFlow COCO-SSD, zero API key ──
+async function scanObject() {
+  if (!selectedImage) return;
+
+  const loading = document.getElementById('loadingText');
+  const loadingMsg = document.getElementById('loadingMsg');
+  const scanButton = document.getElementById('scanButton');
+
+  loading.style.display = 'block';
+  loadingMsg.textContent = 'Loading AI model…';
+  scanButton.disabled = true;
+  scanButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+
+  try {
+    // Load model if not yet ready
+    if (!cocoModel) {
+      loadingMsg.textContent = 'Downloading model (first time only)…';
+      cocoModel = await cocoSsd.load();
+    }
+
+    loadingMsg.textContent = 'Detecting objects…';
+
+    // Draw image onto a canvas first — COCO-SSD reads pixel data
+    // directly from canvas reliably across all browsers
+    let detectTarget;
+    if (selectedImage instanceof HTMLVideoElement) {
+      detectTarget = selectedImage; // video is fine directly
+    } else {
+      const offscreen = document.getElementById('hiddenCanvas');
+      offscreen.width  = selectedImage.naturalWidth  || selectedImage.width;
+      offscreen.height = selectedImage.naturalHeight || selectedImage.height;
+      offscreen.getContext('2d').drawImage(selectedImage, 0, 0);
+      detectTarget = offscreen;
+    }
+
+    // Run detection
+    const predictions = await cocoModel.detect(detectTarget);
+
+    loading.style.display = 'none';
+    scanButton.disabled = false;
+    scanButton.innerHTML = '<i class="fas fa-recycle"></i> Scan Again';
+
+    if (!predictions || predictions.length === 0) {
+      // Nothing detected
+      document.getElementById('resultsPlaceholder').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'block';
+      document.getElementById('allDetections').style.display = 'none';
+      document.getElementById('objectType').textContent = 'Nothing Detected';
+      document.getElementById('recycleBadge').textContent = '❓ UNKNOWN';
+      document.getElementById('recycleBadge').className = 'recycle-status badge-partial';
+      document.getElementById('recycleReason').textContent = 'Could not detect any object. Try a clearer photo with better lighting.';
+      document.getElementById('materialType').textContent = '—';
+      document.getElementById('plasticInfo').textContent = 'Make sure the object is well-lit and centered in frame.';
+      document.getElementById('ecoSuggestion').textContent = 'Try uploading a photo of a bottle, phone, laptop, or food item.';
+      document.getElementById('materialTags').innerHTML = '';
+      document.getElementById('confidence').textContent = '0%';
+      document.getElementById('confBar').style.width = '0%';
+      return;
+    }
+
+    // Sort by confidence, pick top result
+    predictions.sort((a, b) => b.score - a.score);
+    const top = predictions[0];
+    const name = top.class;
+    const confidence = Math.round(top.score * 100);
+
+    // Draw boxes — source dimensions from the canvas we detected on
+    drawBoxes(detectTarget, predictions, selectedImage instanceof HTMLVideoElement);
+    showDetectionPills(predictions);
+
+    // Lookup in database
+    const data = objectDB[name.toLowerCase()] || getDefaultData(name);
+
+    // Populate results
+    document.getElementById('resultsPlaceholder').style.display = 'none';
+    document.getElementById('resultSection').style.display = 'block';
+    document.getElementById('objectType').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+    document.getElementById('materialType').textContent = data.material;
+    document.getElementById('confidence').textContent = confidence + '%';
+    document.getElementById('confBar').style.width = confidence + '%';
+    document.getElementById('recycleReason').textContent = data.reason;
+    document.getElementById('plasticInfo').textContent = data.info;
+    document.getElementById('ecoSuggestion').textContent = data.eco;
+    document.getElementById('materialTags').innerHTML = (data.tags || []).map(t => `<span class="mtag">${t}</span>`).join('');
+
+    const badge = document.getElementById('recycleBadge');
+    const r = (data.recyclable || '').toLowerCase();
+    if (r === 'yes')          { badge.textContent = '✅ RECYCLABLE';            badge.className = 'recycle-status badge-yes'; }
+    else if (r === 'partial') { badge.textContent = '⚠️ PARTIALLY RECYCLABLE'; badge.className = 'recycle-status badge-partial'; }
+    else if (r === 'special') { badge.textContent = '🔵 SPECIAL RECYCLING';    badge.className = 'recycle-status badge-special'; }
+    else                      { badge.textContent = '❌ NOT RECYCLABLE';        badge.className = 'recycle-status badge-no'; }
+
+    // Save to backend (non-blocking, fails silently if backend is offline)
+    saveScanToBackend(name, data.material, r === 'yes', data.reason);
+
+  } catch (err) {
+    loading.style.display = 'none';
+    scanButton.disabled = false;
+    scanButton.innerHTML = '<i class="fas fa-recycle"></i> Try Again';
+    document.getElementById('resultsPlaceholder').style.display = 'none';
+    document.getElementById('resultSection').style.display = 'block';
+    document.getElementById('allDetections').style.display = 'none';
+    document.getElementById('objectType').textContent = 'Scan Failed';
+    document.getElementById('recycleBadge').textContent = '❌ ERROR';
+    document.getElementById('recycleBadge').className = 'recycle-status badge-no';
+    document.getElementById('recycleReason').textContent = err.message || 'An unexpected error occurred.';
+    document.getElementById('materialType').textContent = '—';
+    document.getElementById('plasticInfo').textContent = 'Please try again with a clearer photo.';
+    document.getElementById('ecoSuggestion').textContent = '';
+    document.getElementById('materialTags').innerHTML = '';
+    console.error('Scan error:', err);
+  }
+}
+
+// ── Save scan to backend ──
+async function saveScanToBackend(itemName, material, recyclable, aiResponse) {
+  if (typeof isLoggedIn === 'function' && !isLoggedIn()) return;
+  try {
+    const result = await Scans.save({ itemName, material, recyclable, aiResponse });
+    const banner = document.getElementById('pointsBanner');
+    if (banner) {
+      banner.textContent = `+${result.pointsEarned} pts saved to your account!`;
+      banner.style.display = 'block';
+      setTimeout(() => { banner.style.display = 'none'; }, 4000);
+    }
+  } catch (err) {
+    console.warn('Could not save scan to backend:', err.message);
+  }
+}
+</script>
+
+<script src="api.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof requireLogin === 'function') requireLogin();
+  });
+</script>
+</body>
+</html>
