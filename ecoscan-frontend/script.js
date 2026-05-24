@@ -157,13 +157,27 @@ function validateRegister() {
 
 function showSuccessMessage(type = "Login") {
     const successHeader = document.getElementById('success-header');
+
     hideAllFormsAndMessages();
-    if (successHeader) successHeader.textContent = `${type} Successful!`;
+
+    if (successHeader) {
+        successHeader.textContent = `${type} Successful!`;
+    }
+
     if (successMessageContainer) {
         successMessageContainer.style.display = 'flex';
-        requestAnimationFrame(() => requestAnimationFrame(() => successMessageContainer.classList.add('show')));
+
+        requestAnimationFrame(() =>
+            requestAnimationFrame(() =>
+                successMessageContainer.classList.add('show')
+            )
+        );
     }
-setTimeout(() => { console.log("Login successful"); }, 2000);
+
+    // Redirect ONLY after successful login/register
+    setTimeout(() => {
+        window.location.href = "dashboard.html";
+    }, 2000);
 }
 
 // ── Real API Login ────────────────────────────────────────────
